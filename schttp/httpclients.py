@@ -27,9 +27,6 @@ class HTTPClient:
     
     def __exit__(self, *_):
         self.clear()
-    
-    def __del__(self):
-        self.clear()
 
     def clear(self):
         for address in tuple(self._conn_map.keys()):
