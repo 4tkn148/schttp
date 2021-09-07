@@ -1,4 +1,5 @@
 # schttp
+This library is not meant for production use.
  
 ```bash
 pip install -U git+https://github.com/h0nde/schttp
