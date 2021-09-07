@@ -12,10 +12,7 @@ default_ports = {
     "https": 443
 }
 
-def tunnel_connect(
-        conn: socket,
-        proxy_url: URL,
-        address: tuple) -> bool:
+def tunnel_connect(conn, proxy_url, address):
     conn.connect((proxy_url.hostname, proxy_url.port))
 
     if proxy_url.scheme in ("http", "https"):
