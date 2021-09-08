@@ -1,5 +1,6 @@
 from .models import URL, Response
 from .structures import CaseInsensitiveDict
+from .exceptions import *
 from functools import lru_cache
 from socket import socket, gethostbyname
 from base64 import b64encode
