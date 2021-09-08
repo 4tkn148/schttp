@@ -1,5 +1,5 @@
 from .models import Response, URL
-from .exceptions import RequestException
+from .exceptions import RequestException, EmptyResponse
 from .structures import CaseInsensitiveDict
 from .utils import parse_url, ip_from_hostname, decode_content, \
     tunnel_connect, send_request, get_response, stream_body
