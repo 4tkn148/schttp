@@ -1,8 +1,8 @@
 from .models import Response, URL
 from .exceptions import *
 from .structures import CaseInsensitiveDict
-from .utils import parse_url, ip_from_hostname, craft_request, \
-    decode_content, stream_body, tunnel_connect
+from .utils import parse_url, ip_from_hostname, decode_content, \
+    tunnel_connect, send_request, get_response, stream_body
 from typing import Optional
 from base64 import b64encode
 from socket import socket
@@ -41,66 +41,36 @@ class HTTPClient:
             context=None) -> Response:
         if not isinstance(url, URL):
             url = parse_url(url)
-
         if not isinstance(headers, CaseInsensitiveDict):
             headers = CaseInsensitiveDict(headers)
+        if not chunk_size:
+            chunk_size = 262144
+
+        if not "Host" in headers:
+            headers["Host"] = url.hostname
+        if body is not None and not "Content-Length" in headers:
+            headers["Content-Length"] = str(len(body))
+        if url.auth and not "Authorization" in headers:
+            headers["Authorization"] = "Basic " + b64encode(url.auth.encode()).decode()
+        if not context and url.scheme == "https":
+            context = default_context if self.ssl_verify else unverified_context
 
         address = (
-            url.hostname \
-                if self.remote_dns \
+            url.hostname if self.remote_dns \
                 else ip_from_hostname(url.hostname),
             url.port
         )
 
-        if not "Host" in headers:
-            headers["Host"] = url.hostname
-        
-        if body is not None and not "Content-Length" in headers:
-            headers["Content-Length"] = str(len(body))
-
-        if url.auth and not "Authorization" in headers:
-            headers["Authorization"] = "Basic " + b64encode(url.auth.encode()).decode()
-        
-        if not context and url.scheme == "https":
-            context = default_context if self.ssl_verify else unverified_context
-        
         try:
             conn = self._get_connection(address, context, url.hostname)
         except Exception as err:
             raise RequestException(err)
 
         try:
-            # The code below crafts and sends the HTTP request to the server.
-            conn.sendall(craft_request(method, url.path, tuple(headers.items()), body))
-
-            # The code below processes the server's response.
-            resp, _, resp_body = conn.recv(49152).partition(b"\r\n\r\n")
-            if not resp:
-                raise EmptyResponse("Empty response received")
-            status_line, _, resp_headers = resp.decode().partition("\r\n")
-            status, message = status_line.split(" ", 2)[1:]
-            status = int(status)
-            resp_headers = CaseInsensitiveDict(
-                line.split(": ", 1)
-                for line in resp_headers.splitlines()
-            )
-            resp_body = stream_body(
-                conn, resp_headers,
-                initial_body=resp_body,
-                chunk_size=chunk_size)
-
-            if (encoding := resp_headers.get("Content-Encoding")):
-                resp_body = decode_content(resp_body, encoding)
-            
-            # If an `EmptyResponse` error occurs in a future request attempt
-            # this value will be checked before creating another connection.
+            send_request(conn, method, url.path, tuple(headers.items()), body)
+            resp = get_response(conn, chunk_size)
             conn._sent_request = True
-
-            return Response(
-                status=status,
-                message=message,
-                headers=resp_headers,
-                body=resp_body)
+            return resp
         
         except Exception as err:
             self._close_connection(address)
