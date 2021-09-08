@@ -45,6 +45,8 @@ class HTTPClient:
             headers = CaseInsensitiveDict(headers)
         if not chunk_size:
             chunk_size = 262144
+        if not context and url.scheme == "https":
+            context = default_context if self.ssl_verify else unverified_context
 
         if not "Host" in headers:
             headers["Host"] = url.hostname
@@ -52,8 +54,6 @@ class HTTPClient:
             headers["Content-Length"] = str(len(body))
         if url.auth and not "Authorization" in headers:
             headers["Authorization"] = "Basic " + b64encode(url.auth.encode()).decode()
-        if not context and url.scheme == "https":
-            context = default_context if self.ssl_verify else unverified_context
 
         address = (
             url.hostname if self.remote_dns \
