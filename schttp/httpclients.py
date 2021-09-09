@@ -1,5 +1,5 @@
 from .models import Response, URL
-from .exceptions import RequestException, EmptyResponse
+from .exceptions import RequestException, EmptyResponse, SchemeNotImplemented
 from .structures import CaseInsensitiveDict
 from .utils import parse_url, ip_from_hostname, decode_content, \
     tunnel_connect, send_request, get_response, stream_body
@@ -48,6 +48,10 @@ class HTTPClient:
         if not context and url.scheme == "https":
             context = default_context if self.ssl_verify else unverified_context
 
+        if not url.scheme in ("http", "https"):
+            raise SchemeNotImplemented(
+                f"'{url.scheme}' is not a supported URL scheme")
+
         if not "Host" in headers:
             headers["Host"] = url.hostname
         if body is not None and not "Content-Length" in headers:
@@ -64,7 +68,9 @@ class HTTPClient:
         try:
             conn = self._get_connection(address, context, url.hostname)
         except Exception as err:
-            raise RequestException(err)
+            if not isinstance(err, RequestException):
+                err = RequestException(err)
+            raise err
 
         try:
             send_request(conn, method, url.path, tuple(headers.items()), body)
@@ -84,7 +90,6 @@ class HTTPClient:
                     context=context)
             
             if not isinstance(err, RequestException):
-                # Wrap foreign exceptions.
                 err = RequestException(err)
             
             raise err

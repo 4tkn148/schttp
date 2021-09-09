@@ -6,3 +6,6 @@ class EmptyResponse(RequestException):
 
 class ProxyError(RequestException):
     pass
+
+class SchemeNotImplemented(RequestException):
+    pass

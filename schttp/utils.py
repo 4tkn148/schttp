@@ -55,6 +55,9 @@ def tunnel_connect(conn, proxy_url, address):
                 f"Malformed CONNECT response: {resp.splitlines()[0]}")
         
         return True
+    
+    raise SchemeNotImplemented(
+        f"'{proxy_url.scheme}' is not a supported proxy scheme")
 
 def send_request(conn, method, path, headers, body=None):
     conn.sendall(b"".join((
