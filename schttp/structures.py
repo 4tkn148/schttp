@@ -1,4 +1,4 @@
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
 from collections.abc import MutableMapping, Mapping
 from inspect import isgenerator
 
