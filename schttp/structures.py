@@ -1,4 +1,5 @@
-from collections import OrderedDict, MutableMapping, Iterable
+from collections import OrderedDict, Iterable
+from collections.abc import MutableMapping, Mapping
 from inspect import isgenerator
 
 class CaseInsensitiveDict(MutableMapping):
@@ -56,7 +57,7 @@ class CaseInsensitiveDict(MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, (dict, CaseInsensitiveDict)):
+        if isinstance(other, Mapping):
             other = CaseInsensitiveDict(other)
         else:
             return NotImplemented
